@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tri-Lang Dict Widget with Google Sheets</title>
+</head>
+<body style="background-color: #12183b; margin: 0; padding: 20px;">
+<div class="tri-lang-dict-widget">
+  <style>
+    .tri-lang-dict-widget {
+      --bg-main: #1f2b75;
+      --bg-card: #2e3d96;
+      --bg-input: #1a235c;
+      --text-main: #f2efe9;
+      --text-dim: #d1d5f0;
+      --accent: #e7a33e;
+      --border: rgba(242,239,233,0.2);
+      
+      font-family: 'Inter', sans-serif;
+      color: var(--text-main);
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .tri-lang-dict-widget * { box-sizing: border-box; }
+
+    .tld-preview-box {
+      background: #ffffff;
+      color: #333333;
+      border: 3px solid var(--accent);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      text-align: left;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .tld-preview-header {
+      font-size: 15px;
+      font-weight: 700;
+      color: #e67e22;
+      margin-bottom: 12px;
+      border-bottom: 2px solid #f39c12;
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .tld-preview-content {
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      padding: 20px;
+      border-radius: 8px;
+      min-height: 150px;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    .tld-preview-item {
+      display: flex;
+      align-items: baseline;
+      justify-content: flex-start;
+      gap: 15px;
+      border-bottom: 1px dashed #e0e0e0;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+    .tld-preview-empty {
+      color: #999;
+      font-style: italic;
+      text-align: center;
+      padding: 30px 0;
+      font-size: 14px;
+    }
+
+    .tld-panel {
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .tld-search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .tld-input {
+      flex: 1;
+      min-width: 110px;
+      background: var(--bg-input);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text-main);
+      font-size: 15px;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .tld-input:focus { outline: none; border-color: var(--accent); }
+    .tld-input::placeholder { color: var(--text-dim); opacity: 0.6; }
+
+    .tld-btn {
+      background: var(--accent);
+      color: #231604;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      padding: 0 18px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .tld-btn:hover { background: #f0b358; }
+
+    .tld-alphabet-bar {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .tld-alphabet-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .tld-alphabet-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .tld-alpha-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'Sarabun', sans-serif;
+      min-width: 32px;
+      text-align: center;
+    }
+    .tld-alpha-btn:hover, .tld-alpha-btn.active {
+      background: var(--accent);
+      color: #231604;
+      border-color: var(--accent);
+      font-weight: bold;
+    }
+
+    .tld-category-dropdown-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      border-top: 1px dashed var(--border);
+      padding-top: 8px;
+    }
+    .tld-category-dropdown-row label {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .tld-select {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text-main);
+      font-size: 13px;
+      font-family: 'Sarabun', sans-serif;
+    }
+
+    .tld-export-bar {
+      background: rgba(231, 163, 62, 0.15);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+      font-family: 'Sarabun', sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tld-group-section {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tld-group-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 4px;
+    }
+    .tld-group-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .tld-options-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+    .tld-options-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .tld-hint {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .tld-results {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 440px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .tld-group-header {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin-top: 8px;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .tld-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .tld-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+    .tld-val { font-size: 15px; font-weight: 600; font-family: 'Sarabun', sans-serif; }
+    .tld-val.th { color: var(--accent); }
+    .tld-empty { text-align: center; padding: 30px; color: var(--text-dim); font-family: 'Sarabun', sans-serif; font-style: italic; }
+
+    /* Flashcard Modal Styles */
+    #tldFlashcardOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999994;
+      background: #faf0bf;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      font-family: 'Sarabun', sans-serif;
+      color: #2c2c2c;
+    }
+    #tldFlashcardOverlay.tld-active { display: flex; }
+    .tld-flashcard-topbar {
+      position: absolute; top: 16px; left: 16px; right: 16px;
+      display: flex; justify-content: space-between; align-items: center; font-size: 14px;
+    }
+    #tldFlashcardCloseBtn {
+      background: #2e3d96; color: #ffffff; border: none; border-radius: 8px;
+      padding: 6px 14px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 13px;
+    }
+    .tld-flashcard-stage {
+      perspective: 1200px; width: 100%; max-width: 380px; aspect-ratio: 3 / 2; margin-bottom: 24px;
+    }
+    .tld-flashcard {
+      position: relative; width: 100%; height: 100%; cursor: pointer;
+      transform-style: preserve-3d; transition: transform 0.5s;
+    }
+    .tld-flashcard.tld-flipped { transform: rotateY(180deg); }
+    .tld-flashcard-face {
+      position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      border-radius: 14px; background: #2e3d96; color: #ffffff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); text-align: center; box-sizing: border-box;
+    }
+    .tld-flashcard-back { transform: rotateY(180deg); background: #ffbc59; color: #000000; }
+    .tld-flashcard-th { font-size: 32px; font-weight: 700; margin-bottom: 8px; word-break: break-word; }
+    .tld-flashcard-read { font-size: 16px; color: rgba(255,255,255,0.8); font-style: italic; }
+    .tld-flashcard-en { font-size: 22px; font-weight: 600; margin-bottom: 6px; word-break: break-word; }
+    .tld-flashcard-jp { font-size: 20px; color: #333333; word-break: break-word; }
+    .tld-flashcard-controls { display: flex; gap: 12px; }
+    .tld-flashcard-controls button {
+      background: var(--accent); color: #231604; border: none; border-radius: 8px;
+      padding: 10px 16px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 14px;
+    }
+    .tld-flashcard-hint { margin-top: 14px; font-size: 12px; color: rgba(0,0,0,0.55); }
+
+    /* Custom Alert Modal */
+    #tldCustomModalOverlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 999999; align-items: center; justify-content: center; font-family: 'Sarabun', sans-serif;
+    }
+    #tldCustomModalBox {
+      background: #ffffff; color: #2c3e50; border-radius: 10px;
+      padding: 22px 24px; max-width: 360px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); text-align: center;
+    }
+    #tldCustomModalMessage { font-size: 15px; line-height: 1.5; margin-bottom: 18px; white-space: pre-line; }
+    #tldCustomModalButtons { display: flex; gap: 10px; justify-content: center; }
+    #tldCustomModalButtons button {
+      border: none; border-radius: 8px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif;
+    }
+    #tldModalOkBtn { background: #e7a33e; color: #231604; }
+    #tldModalCancelBtn { background: #eeeeee; color: #333333; }
+  </style>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <div class="tld-preview-box">
+    <div class="tld-preview-header">
+      <span>📄 Vocabulary list (Preview Mode)</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="previewCountBadge" style="background: #e67e22; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 12px;">0 items</span>
+        <button type="button" id="tldClearAllPreviewBtn" style="background: #e74c3c; color: #fff; border: none; padding: 2px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'Sarabun', sans-serif;">Clear All</button>
+      </div>
+    </div>
+    <div class="tld-preview-content" id="tldPreviewContent">
+      <div class="tld-preview-empty">No vocabulary selected yet (Check items below to preview)</div>
+    </div>
+  </div>
+
+  <div class="tld-panel">
+    <div class="tld-search-box">
+      <input type="text" class="tld-input" id="tldSearchInput" placeholder="Search vocabulary..." autocomplete="off">
+      <div id="totalStorageCountBadge" style="font-family: 'Sarabun', sans-serif; font-size: 14px; background: rgba(231,163,62,0.15); border: 1px solid var(--accent); color: var(--accent); padding: 8px 14px; border-radius: 8px; white-space: nowrap;">
+        Total Storage: <strong id="totalStorageCountNum">0</strong> items
+      </div>
+    </div>
+    
+    <div class="tld-export-bar">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+        <div>Selected for Flashcards: <strong id="selectedCount" style="color: var(--accent);">0</strong> items</div>
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <div class="tld-group-section">
+          <div class="tld-group-title">🗂️ Learning Mode</div>
+          <div class="tld-group-buttons">
+            <label class="tld-options-row">
+              <input type="checkbox" id="hideReadCheckbox"> Hide Pronunciation
+            </label>
+            <button class="tld-btn" id="tldFlashcardBtn" style="background: #16a085; color: #fff; padding: 8px 12px; font-size: 13px;">🗂️ Flashcards</button>
+            <button class="tld-btn" id="tldRandom10Btn" style="background: #e67e22; color: #fff; padding: 8px 12px; font-size: 13px;">🎲 Random 10 Items</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tld-hint">Check vocabulary items above to practice, or use the search box</div>
+
+    <div class="tld-alphabet-bar">
+      <div class="tld-alphabet-bar-header">
+        <span>Filter by Thai Consonants:</span>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" id="tldSelectAllFilteredBtn" class="tld-alpha-btn" style="padding: 2px 8px; font-size: 11px; width: auto; background: #e7a33e; color: #231604; font-weight: bold;">Select All (Filtered)</button>
+          <button type="button" id="tldResetAlphaBtn" class="tld-alpha-btn" style="padding: 2px 8px; font-size: 11px; width: auto;">Show All</button>
+        </div>
+      </div>
+      <div class="tld-alphabet-grid" id="tldAlphabetGridContainer"></div>
+      
+      <div class="tld-category-dropdown-row">
+        <label for="tldCategorySelect">Filter by Category:</label>
+        <select id="tldCategorySelect" class="tld-select">
+          <option value="">-- All Categories / All --</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="tld-results" id="tldResultsContainer">
+      <div class="tld-empty">Loading data from Google Sheets...</div>
+    </div>
+  </div>
+</div>
+
+<div id="tldFlashcardOverlay">
+  <div class="tld-flashcard-topbar">
+    <span id="tldFlashcardCounter">1 / 1</span>
+    <button type="button" id="tldFlashcardCloseBtn">✕ Close</button>
+  </div>
+  <div class="tld-flashcard-stage">
+    <div class="tld-flashcard" id="tldFlashcardEl">
+      <div class="tld-flashcard-face tld-flashcard-front">
+        <div class="tld-flashcard-th" id="tldFlashcardTh"></div>
+        <div class="tld-flashcard-read" id="tldFlashcardRead"></div>
+      </div>
+      <div class="tld-flashcard-face tld-flashcard-back">
+        <div class="tld-flashcard-en" id="tldFlashcardEn"></div>
+        <div class="tld-flashcard-jp" id="tldFlashcardJp"></div>
+      </div>
+    </div>
+  </div>
+  <div class="tld-flashcard-controls">
+    <button type="button" id="tldFlashcardPrevBtn">← Previous</button>
+    <button type="button" id="tldFlashcardShuffleBtn">🔀 Shuffle</button>
+    <button type="button" id="tldFlashcardNextBtn">Next →</button>
+  </div>
+  <div class="tld-flashcard-hint">Tap card to flip and view translation</div>
+</div>
+
+<div id="tldCustomModalOverlay">
+  <div id="tldCustomModalBox">
+    <div id="tldCustomModalMessage"></div>
+    <div id="tldCustomModalButtons">
+      <button type="button" id="tldModalCancelBtn">Cancel</button>
+      <button type="button" id="tldModalOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1rIKOMoFmGf3qhpwmexa_74j8LhXzEtQJMGo7eVpmTuE/export?format=csv';
+  const SELECTED_KEY = 'MY_EXCLUSIVE_SELECTED_IDS_V1';
+
+  let dictionaryData = [];
+  let selectedIds = loadSelectedIds();
+
+  let activeAlphabetFilter = '';
+  let activeCategoryFilter = '';
+
+  function loadSelectedIds() {
+    let saved = localStorage.getItem(SELECTED_KEY);
+    if (saved) {
+      try { return new Set(JSON.parse(saved)); } catch(e) {}
+    }
+    return new Set();
+  }
+
+  function saveSelectedIds() {
+    localStorage.setItem(SELECTED_KEY, JSON.stringify(Array.from(selectedIds)));
+  }
+
+  const searchInput = document.getElementById('tldSearchInput');
+  const hideReadCheckbox = document.getElementById('hideReadCheckbox');
+  const resultsContainer = document.getElementById('tldResultsContainer');
+  const selectedCountEl = document.getElementById('selectedCount');
+  const totalStorageCountNum = document.getElementById('totalStorageCountNum');
+  
+  const previewContent = document.getElementById('tldPreviewContent');
+  const previewCountBadge = document.getElementById('previewCountBadge');
+  const clearAllPreviewBtn = document.getElementById('tldClearAllPreviewBtn');
+  const alphabetGridContainer = document.getElementById('tldAlphabetGridContainer');
+  const resetAlphaBtn = document.getElementById('tldResetAlphaBtn');
+  const selectAllFilteredBtn = document.getElementById('tldSelectAllFilteredBtn');
+  const categorySelect = document.getElementById('tldCategorySelect');
+
+  const flashcardBtn = document.getElementById('tldFlashcardBtn');
+  const random10Btn = document.getElementById('tldRandom10Btn');
+  const flashcardOverlay = document.getElementById('tldFlashcardOverlay');
+  const flashcardEl = document.getElementById('tldFlashcardEl');
+  const flashcardCounter = document.getElementById('tldFlashcardCounter');
+  const flashcardThEl = document.getElementById('tldFlashcardTh');
+  const flashcardReadEl = document.getElementById('tldFlashcardRead');
+  const flashcardEnEl = document.getElementById('tldFlashcardEn');
+  const flashcardJpEl = document.getElementById('tldFlashcardJp');
+  const flashcardPrevBtn = document.getElementById('tldFlashcardPrevBtn');
+  const flashcardNextBtn = document.getElementById('tldFlashcardNextBtn');
+  const flashcardShuffleBtn = document.getElementById('tldFlashcardShuffleBtn');
+  const flashcardCloseBtn = document.getElementById('tldFlashcardCloseBtn');
+
+  const customModalOverlay = document.getElementById('tldCustomModalOverlay');
+  const customModalMessage = document.getElementById('tldCustomModalMessage');
+  const modalOkBtn = document.getElementById('tldModalOkBtn');
+  const modalCancelBtn = document.getElementById('tldModalCancelBtn');
+
+  function closeCustomModal() {
+    customModalOverlay.style.display = 'none';
+    modalOkBtn.onclick = null;
+    modalCancelBtn.onclick = null;
+  }
+
+  function customAlert(message) {
+    customModalMessage.textContent = message;
+    modalCancelBtn.style.display = 'none';
+    customModalOverlay.style.display = 'flex';
+    modalOkBtn.onclick = function() { closeCustomModal(); };
+  }
+
+  const thaiConsonants = [
+    "ก", "ข", "ฃ", "ค", "ฅ", "ฆ", "ง", 
+    "จ", "ฉ", "ช", "ซ", "ฌ", "ญ", 
+    "ฎ", "ฏ", "ฐ", "ฑ", "ฒ", "ณ", 
+    "ด", "ต", "ถ", "ท", "ธ", "น", 
+    "บ", "ป", "ผ", "ฝ", "พ", "ฟ", "ภ", "ม", 
+    "ย", "ร", "ล", "ว", 
+    "ศ", "ษ", "ส", "ห", "ฬ", "อ", "ฮ"
+  ];
+
+  async function initSheetData() {
+    try {
+      const response = await fetch(SHEET_CSV_URL);
+      const csvText = await response.text();
+      dictionaryData = parseCSV(csvText);
+    } catch (e) {
+      console.error("Failed to load Google Sheets:", e);
+      resultsContainer.innerHTML = '<div class="tld-empty">Failed to load data from Google Sheets. Please check sharing permissions.</div>';
+      return;
+    }
+
+    updateStorageCount();
+    updateSelectedCount();
+    renderAlphabetButtons();
+    updateCategoryDropdown();
+    renderResults('');
+  }
+
+  function parseCSV(text) {
+    const lines = text.split('\n');
+    const result = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const row = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(item => item.replace(/^"|"$/g, '').trim());
+      if (row.length >= 2 && row[1]) {
+        const thText = row[1];
+        result.push({
+          id: i,
+          th: thText,
+          readTh: row[2] || '',
+          en: row[3] || '',
+          jp: row[4] || '',
+          group: thText.charAt(0),
+          category: row[5] || ''
+        });
+      }
+    }
+    return result;
+  }
+
+  function updateCategoryDropdown() {
+    const categoriesSet = new Set();
+    dictionaryData.forEach(item => {
+      if (item.category && item.category.trim() !== '') {
+        categoriesSet.add(item.category.trim());
+      }
+    });
+
+    const currentVal = categorySelect.value;
+    categorySelect.innerHTML = '<option value="">-- All Categories / All --</option>';
+    Array.from(categoriesSet).sort().forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      categorySelect.appendChild(opt);
+    });
+    categorySelect.value = categoriesSet.has(currentVal) ? currentVal : '';
+  }
+
+  categorySelect.addEventListener('change', function() {
+    activeCategoryFilter = this.value;
+    renderResults(searchInput.value);
+  });
+
+  function renderAlphabetButtons() {
+    alphabetGridContainer.innerHTML = '';
+    thaiConsonants.forEach(char => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tld-alpha-btn';
+      if (activeAlphabetFilter === char) btn.classList.add('active');
+      btn.textContent = char;
+      btn.addEventListener('click', function() {
+        if (activeAlphabetFilter === char) {
+          activeAlphabetFilter = '';
+        } else {
+          activeAlphabetFilter = char;
+        }
+        renderAlphabetButtons();
+        renderResults(searchInput.value);
+      });
+      alphabetGridContainer.appendChild(btn);
+    });
+  }
+
+  resetAlphaBtn.addEventListener('click', function() {
+    activeAlphabetFilter = '';
+    activeCategoryFilter = '';
+    categorySelect.value = '';
+    renderAlphabetButtons();
+    renderResults(searchInput.value);
+  });
+
+  selectAllFilteredBtn.addEventListener('click', function() {
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = dictionaryData.filter(item => {
+      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) {
+        return false;
+      }
+      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) {
+        return false;
+      }
+      if (!query) return true;
+      return (
+        (item.th || '').toLowerCase().includes(query) ||
+        (item.readTh && item.readTh.toLowerCase().includes(query)) ||
+        (item.en && item.en.toLowerCase().includes(query)) ||
+        (item.jp && item.jp.toLowerCase().includes(query)) ||
+        (item.category && item.category.toLowerCase().includes(query))
+      );
+    });
+
+    filtered.forEach(item => selectedIds.add(item.id));
+    saveSelectedIds();
+    updateSelectedCount();
+    renderResults(searchInput.value);
+  });
+
+  clearAllPreviewBtn.addEventListener('click', function() {
+    selectedIds.clear();
+    saveSelectedIds();
+    updateSelectedCount();
+    renderResults(searchInput.value);
+  });
+
+  function updateStorageCount() {
+    if (totalStorageCountNum) {
+      totalStorageCountNum.textContent = dictionaryData.length;
+    }
+  }
+
+  function updateSelectedCount() {
+    selectedCountEl.textContent = selectedIds.size;
+    previewCountBadge.textContent = selectedIds.size + ' items';
+    updateLivePreview();
+  }
+
+  function updateLivePreview() {
+    const selectedItems = dictionaryData.filter(item => selectedIds.has(item.id));
+    const hideRead = hideReadCheckbox.checked;
+    
+    if (selectedItems.length === 0) {
+      previewContent.innerHTML = '<div class="tld-preview-empty">No vocabulary selected yet (Check items below to preview)</div>';
+      return;
+    }
+
+    let listHtml = '';
+    selectedItems.forEach((item, index) => {
+      const itemNumber = index + 1;
+      const readSpan = (!hideRead && item.readTh) ? `<span style="font-size: 11px; color: #666; font-style: italic; margin-left: 6px;">(${item.readTh})</span>` : '';
+      
+      listHtml += `
+        <div class="tld-preview-item">
+          <div style="display: flex; align-items: baseline; gap: 10px; min-width: 170px;">
+            <span style="font-weight: bold; color: #111; min-width: 24px;">${itemNumber}.</span>
+            <div>
+              <span style="font-size: 14px; font-weight: bold; color: #111;">${item.th}</span>
+              ${readSpan}
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px; color: #444;">
+            <span style="min-width: 85px;">${item.en || ''}</span>
+            <span style="min-width: 85px;">${item.jp || ''}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    previewContent.innerHTML = `<div style="display: flex; flex-direction: column;">${listHtml}</div>`;
+  }
+
+  function renderResults(keyword = '') {
+    const query = keyword.trim().toLowerCase();
+    const filtered = dictionaryData.filter(item => {
+      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) {
+        return false;
+      }
+      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) {
+        return false;
+      }
+      if (!query) return true;
+      return (
+        (item.th || '').toLowerCase().includes(query) ||
+        (item.readTh && item.readTh.toLowerCase().includes(query)) ||
+        (item.en && item.en.toLowerCase().includes(query)) ||
+        (item.jp && item.jp.toLowerCase().includes(query)) ||
+        (item.category && item.category.toLowerCase().includes(query))
+      );
+    });
+
+    if (filtered.length === 0) {
+      resultsContainer.innerHTML = '<div class="tld-empty">No matching vocabulary found...</div>';
+      return;
+    }
+
+    resultsContainer.innerHTML = '';
+    
+    if (!query && !activeAlphabetFilter && !activeCategoryFilter) {
+      const groups = {};
+      filtered.forEach(item => {
+        const g = item.group || "Others";
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(item);
+      });
+
+      Object.keys(groups).sort().forEach(g => {
+        const header = document.createElement('div');
+        header.className = 'tld-group-header';
+        header.textContent = `Consonant Group: ${g}`;
+        resultsContainer.appendChild(header);
+        groups[g].forEach(item => resultsContainer.appendChild(createCard(item)));
+      });
+    } else {
+      let headerText = 'Filtered Results';
+      if (activeAlphabetFilter) headerText = `Consonant Group: ${activeAlphabetFilter}`;
+      if (activeCategoryFilter) headerText += ` | Category: ${activeCategoryFilter}`;
+
+      const header = document.createElement('div');
+      header.className = 'tld-group-header';
+      header.textContent = headerText;
+      resultsContainer.appendChild(header);
+
+      filtered.forEach(item => resultsContainer.appendChild(createCard(item)));
+    }
+  }
+
+  function createCard(item) {
+    const card = document.createElement('div');
+    card.className = 'tld-card';
+    const isChecked = selectedIds.has(item.id) ? 'checked' : '';
+    const catBadge = item.category ? `<span style="font-size: 11px; background: rgba(231,163,62,0.2); color: var(--accent); padding: 2px 6px; border-radius: 4px; margin-right: 8px;">[${item.category}]</span>` : '';
+
+    card.innerHTML = `
+      <div>
+        <input type="checkbox" class="tld-checkbox" data-id="${item.id}" ${isChecked}>
+      </div>
+      <div class="card-content-area">
+        <div class="tld-val th">
+          <span class="view-mode">
+            ${catBadge}
+            ${item.th} 
+            <span style="font-size: 13px; color: var(--text-dim); font-weight: normal; font-style: italic;">(${item.readTh || '-'})</span>
+            <span style="font-size: 14px; color: #a2d2ff; margin-left: 12px;">${item.en || ''}</span>
+            <span style="font-size: 14px; color: #ffb703; margin-left: 8px;">${item.jp || ''}</span>
+          </span>
+        </div>
+      </div>
+    `;
+
+    card.querySelector('.tld-checkbox').addEventListener('change', function() {
+      const id = Number(this.getAttribute('data-id'));
+      if (this.checked) selectedIds.add(id);
+      else selectedIds.delete(id);
+      saveSelectedIds();
+      updateSelectedCount();
+    });
+
+    return card;
+  }
+
+  searchInput.addEventListener('input', () => renderResults(searchInput.value));
+  hideReadCheckbox.addEventListener('change', updateLivePreview);
+
+  let flashcardItems = [];
+  let flashcardIndex = 0;
+
+  function renderFlashcard() {
+    if (flashcardItems.length === 0) return;
+    const item = flashcardItems[flashcardIndex];
+    flashcardEl.classList.remove('tld-flipped');
+    flashcardThEl.textContent = item.th;
+    flashcardReadEl.textContent = item.readTh ? `(${item.readTh})` : '';
+    flashcardEnEl.textContent = item.en || '-';
+    flashcardJpEl.textContent = item.jp || '-';
+    flashcardCounter.textContent = `${flashcardIndex + 1} / ${flashcardItems.length}`;
+  }
+
+  function openFlashcards(items) {
+    if (!items || items.length === 0) {
+      customAlert('Please check at least 1 vocabulary item before opening Flashcards!');
+      return;
+    }
+    flashcardItems = items.slice();
+    flashcardIndex = 0;
+    renderFlashcard();
+    flashcardOverlay.classList.add('tld-active');
+  }
+
+  function closeFlashcards() {
+    flashcardOverlay.classList.remove('tld-active');
+  }
+
+  flashcardBtn.addEventListener('click', function() {
+    const selectedItems = dictionaryData.filter(item => selectedIds.has(item.id));
+    openFlashcards(selectedItems);
+  });
+
+  random10Btn.addEventListener('click', function() {
+    if (dictionaryData.length === 0) {
+      customAlert('No vocabulary data available in storage');
+      return;
+    }
+    const shuffled = [...dictionaryData].sort(() => 0.5 - Math.random());
+    const random10 = shuffled.slice(0, 10);
+    openFlashcards(random10);
+  });
+
+  flashcardEl.addEventListener('click', function() {
+    flashcardEl.classList.toggle('tld-flipped');
+  });
+
+  flashcardNextBtn.addEventListener('click', function() {
+    flashcardIndex = (flashcardIndex + 1) % flashcardItems.length;
+    renderFlashcard();
+  });
+
+  flashcardPrevBtn.addEventListener('click', function() {
+    flashcardIndex = (flashcardIndex - 1 + flashcardItems.length) % flashcardItems.length;
+    renderFlashcard();
+  });
+
+  flashcardShuffleBtn.addEventListener('click', function() {
+    for (let i = flashcardItems.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = flashcardItems[i];
+      flashcardItems[i] = flashcardItems[j];
+      flashcardItems[j] = temp;
+    }
+    flashcardIndex = 0;
+    renderFlashcard();
+  });
+
+  flashcardCloseBtn.addEventListener('click', closeFlashcards);
+
+  initSheetData();
+})();
+</script>
+</body>
+</html>
