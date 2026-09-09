@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thai Flashcards - Full Course Access</title>
+    <title>Thai Flashcards App with Full Course Access</title>
 </head>
 <body style="background-color: #12183b; margin: 0; padding: 20px;">
 <div class="tri-lang-dict-widget">
@@ -27,6 +27,7 @@
     }
     .tri-lang-dict-widget * { box-sizing: border-box; }
 
+    /* Auth Bar / Course Access Bar */
     .tld-auth-bar {
       display: flex;
       justify-content: space-between;
@@ -343,33 +344,30 @@
     }
     #tldCustomModalBox {
       background: #ffffff; color: #2c3e50; border-radius: 12px;
-      padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); text-align: center;
+      padding: 24px; max-width: 380px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); text-align: center;
     }
     #tldCustomModalMessage { font-size: 15px; line-height: 1.5; margin-bottom: 20px; white-space: pre-line; }
     #tldCustomModalButtons { display: flex; gap: 10px; justify-content: center; }
-    #tldCustomModalButtons button, #tldCustomModalButtons a {
-      border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif; text-decoration: none; display: inline-block;
+    #tldCustomModalButtons button {
+      border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif;
     }
     #tldModalOkBtn { background: #e7a33e; color: #231604; }
-    #tldModalCancelBtn { background: #eeeeee; color: #333333; }
-    
-    .tld-modal-input {
-      width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
-    }
+    #tldModalCancelBtn { background: #eeeeee; color: #333333; display: none; }
   </style>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <!-- แถบลิงก์ไปซื้อคอร์ส (เปลี่ยนจากปุ่ม Login เป็นปุ่มพาไปซื้อทั้งคอร์ส) -->
   <div class="tld-auth-bar">
     <div style="display: flex; align-items: center; gap: 10px;">
-      <span>👤 User: <strong id="currentUserEmail" style="color: var(--accent);">Not logged in (Guest)</strong></span>
-      <span id="userStatusBadge" style="background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">FREE</span>
+      <span>🎓 Full Course Access</span>
     </div>
     <div style="display: flex; gap: 8px;">
-      <button type="button" id="authActionBtn" style="background: #3498db; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold;">🔑 Login</button>
-      <a href="https://www.chobpasathai.com/slides/all-in-one-thai-materials-14" target="_blank" id="upgradeProBtn" style="background: #27ae60; color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; display: none; align-items: center;">💎 Get Full Course Access</a>
+      <a href="https://www.chobpasathai.com/slides/all-in-one-thai-materials-14" target="_blank" style="text-decoration: none;">
+        <button type="button" style="background: #27ae60; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold;">💎 Buy Full Course Pro</button>
+      </a>
     </div>
   </div>
 
@@ -463,10 +461,10 @@
   <div class="tld-flashcard-hint">Tap card to flip and view translation</div>
 </div>
 
+<!-- Modal สำหรับแจ้งเตือน -->
 <div id="tldCustomModalOverlay">
   <div id="tldCustomModalBox">
     <div id="tldCustomModalMessage"></div>
-    <div id="tldCustomModalBody"></div>
     <div id="tldCustomModalButtons" style="margin-top: 15px;">
       <button type="button" id="tldModalCancelBtn">Cancel</button>
       <button type="button" id="tldModalOkBtn">OK</button>
@@ -478,13 +476,12 @@
 (function() {
   const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1rIKOMoFmGf3qhpwmexa_74j8LhXzEtQJMGo7eVpmTuE/export?format=csv';
   const SELECTED_KEY = 'MY_EXCLUSIVE_SELECTED_IDS_V1';
-  const AUTH_USER_KEY = 'MY_APP_LOGGED_USER_V1';
 
   let dictionaryData = [];
   let selectedIds = loadSelectedIds();
-  let currentUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY)) || null; 
-
-  // กำหนดหมวดหมู่ที่ถือว่าเป็นเนื้อหา Pro (เข้าข่ายคอร์สทั้งหมดที่ต้องซื้อ)
+  
+  // ตั้งค่าสถานะ Pro (ถ้าต้องการเปิดให้ดูฟรีทั้งหมดในช่วงเทส ให้แก้เป็น true / ถ้าจะล็อกให้เป็น false)
+  const isPro = false; 
   const proCategories = ["Business Thai", "Advanced", "Slang"];
 
   let activeAlphabetFilter = '';
@@ -515,11 +512,6 @@
   const resetAlphaBtn = document.getElementById('tldResetAlphaBtn');
   const selectAllFilteredBtn = document.getElementById('tldSelectAllFilteredBtn');
   const categorySelect = document.getElementById('tldCategorySelect');
-  
-  const currentUserEmail = document.getElementById('currentUserEmail');
-  const userStatusBadge = document.getElementById('userStatusBadge');
-  const authActionBtn = document.getElementById('authActionBtn');
-  const upgradeProBtn = document.getElementById('upgradeProBtn');
 
   const flashcardBtn = document.getElementById('tldFlashcardBtn');
   const random10Btn = document.getElementById('tldRandom10Btn');
@@ -537,114 +529,14 @@
 
   const customModalOverlay = document.getElementById('tldCustomModalOverlay');
   const customModalMessage = document.getElementById('tldCustomModalMessage');
-  const customModalBody = document.getElementById('tldCustomModalBody');
   const modalOkBtn = document.getElementById('tldModalOkBtn');
   const modalCancelBtn = document.getElementById('tldModalCancelBtn');
 
-  function updateAuthUI() {
-    if (currentUser) {
-      currentUserEmail.textContent = currentUser.email;
-      authActionBtn.textContent = '🚪 Logout';
-      authActionBtn.style.background = '#e74c3c';
-      
-      if (currentUser.isPro) {
-        userStatusBadge.textContent = 'PRO FULL COURSE 🌟';
-        userStatusBadge.style.background = '#27ae60';
-        upgradeProBtn.style.display = 'none';
-      } else {
-        userStatusBadge.textContent = 'FREE';
-        userStatusBadge.style.background = '#e67e22';
-        upgradeProBtn.style.display = 'inline-flex';
-      }
-    } else {
-      currentUserEmail.textContent = 'Not logged in (Guest)';
-      userStatusBadge.textContent = 'FREE';
-      userStatusBadge.style.background = '#e74c3c';
-      authActionBtn.textContent = '🔑 Login';
-      authActionBtn.style.background = '#3498db';
-      upgradeProBtn.style.display = 'none';
-    }
-    updateCategoryDropdown();
-    renderResults(searchInput.value);
-  }
-  updateAuthUI();
-
-  authActionBtn.addEventListener('click', function() {
-    if (currentUser) {
-      currentUser = null;
-      localStorage.removeItem(AUTH_USER_KEY);
-      updateAuthUI();
-      customAlert('Logged out successfully.');
-    } else {
-      openLoginModal();
-    }
-  });
-
-  function openLoginModal() {
-    customModalMessage.textContent = '🔐 Login to your account';
-    customModalBody.innerHTML = `
-      <input type="email" id="loginEmailInput" class="tld-modal-input" placeholder="Enter your email (e.g. user@gmail.com)" autocomplete="off">
-    `;
-    modalCancelBtn.style.display = 'inline-block';
-    customModalOverlay.style.display = 'flex';
-
-    modalOkBtn.onclick = function() {
-      const emailVal = document.getElementById('loginEmailInput').value.trim();
-      if (!emailVal || !emailVal.includes('@')) {
-        alert('Please enter a valid email address!');
-        return;
-      }
-      
-      currentUser = {
-        email: emailVal,
-        isPro: emailVal.includes('pro') // จำลอง: พิมพ์อีเมลมีคำว่า pro จะถือว่าปลดล็อกสิทธิ์ทั้งคอร์ส
-      };
-      
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
-      closeCustomModal();
-      updateAuthUI();
-      customAlert(`Welcome back, ${currentUser.email}!`);
-    };
-
-    modalCancelBtn.onclick = function() {
-      closeCustomModal();
-    };
-  }
-
-  function closeCustomModal() {
-    customModalOverlay.style.display = 'none';
-    customModalBody.innerHTML = '';
-    modalOkBtn.onclick = null;
-    modalCancelBtn.onclick = null;
-  }
-
   function customAlert(message) {
     customModalMessage.textContent = message;
-    customModalBody.innerHTML = '';
     modalCancelBtn.style.display = 'none';
     customModalOverlay.style.display = 'flex';
-    modalOkBtn.onclick = function() { closeCustomModal(); };
-  }
-
-  // แจ้งเตือนเมื่อพยายามเข้าถึงเนื้อหา Pro โดยยังไม่ซื้อคอร์สเต็ม
-  function promptBuyFullCourse() {
-    customModalMessage.textContent = '🔒 [Full Course Locked]\n\nUnlock all vocabulary and full course materials to get complete access!';
-    customModalBody.innerHTML = '';
-    modalCancelBtn.style.display = 'inline-block';
-    modalCancelBtn.textContent = 'Cancel';
-    
-    // เปลี่ยนปุ่ม OK ให้พุ่งตรงไปที่ลิงก์คอร์สของคุณ
-    modalOkBtn.innerHTML = '<a href="https://www.chobpasathai.com/slides/all-in-one-thai-materials-14" target="_blank" style="color: #231604; text-decoration: none;">Go to Full Course 🚀</a>';
-    customModalOverlay.style.display = 'flex';
-
-    modalOkBtn.onclick = function() {
-      window.open('https://www.chobpasathai.com/slides/all-in-one-thai-materials-14', '_blank');
-      closeCustomModal();
-    };
-    modalCancelBtn.onclick = function() {
-      modalOkBtn.textContent = 'OK';
-      closeCustomModal();
-    };
+    modalOkBtn.onclick = function() { customModalOverlay.style.display = 'none'; };
   }
 
   const thaiConsonants = [
@@ -709,8 +601,6 @@
 
     const currentVal = categorySelect.value;
     categorySelect.innerHTML = '<option value="">-- All Categories / All --</option>';
-    
-    const isPro = currentUser && currentUser.isPro;
 
     Array.from(categoriesSet).sort().forEach(cat => {
       const opt = document.createElement('option');
@@ -718,7 +608,7 @@
       const isProCat = proCategories.some(p => cat.toLowerCase().includes(p.toLowerCase()));
       
       if (isProCat && !isPro) {
-        opt.textContent = `🔒 ${cat} (Full Course Only)`;
+        opt.textContent = `🔒 ${cat} (Pro Only)`;
       } else {
         opt.textContent = cat;
       }
@@ -729,13 +619,12 @@
 
   categorySelect.addEventListener('change', function() {
     const selectedCategory = this.value;
-    const isPro = currentUser && currentUser.isPro;
     const isProCat = proCategories.some(p => selectedCategory.toLowerCase().includes(p.toLowerCase()));
     
     if (isProCat && !isPro) {
       this.value = '';
       activeCategoryFilter = '';
-      promptBuyFullCourse();
+      window.open('https://www.chobpasathai.com/slides/all-in-one-thai-materials-14', '_blank');
       return;
     }
 
@@ -774,7 +663,6 @@
 
   selectAllFilteredBtn.addEventListener('click', function() {
     const query = searchInput.value.trim().toLowerCase();
-    const isPro = currentUser && currentUser.isPro;
 
     const filtered = dictionaryData.filter(item => {
       if (activeAlphabetFilter && item.group !== activeAlphabetFilter) return false;
@@ -908,7 +796,6 @@
     const card = document.createElement('div');
     card.className = 'tld-card';
     
-    const isPro = currentUser && currentUser.isPro;
     const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
     const isLocked = isProCat && !isPro;
 
@@ -920,12 +807,14 @@
         <div>🔒</div>
         <div class="card-content-area" style="opacity: 0.6;">
           <div class="tld-val" style="color: #e74c3c;">
-            ${catBadge} Locked Full Course Vocabulary (Click to unlock)
+            ${catBadge} Locked Pro Vocabulary (Click to unlock full course)
           </div>
         </div>
       `;
       card.style.cursor = 'pointer';
-      card.addEventListener('click', promptBuyFullCourse);
+      card.addEventListener('click', () => {
+        window.open('https://www.chobpasathai.com/slides/all-in-one-thai-materials-14', '_blank');
+      });
       return card;
     }
 
@@ -995,7 +884,6 @@
   });
 
   random10Btn.addEventListener('click', function() {
-    const isPro = currentUser && currentUser.isPro;
     const availableData = dictionaryData.filter(item => {
       const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
       return !(isProCat && !isPro);
