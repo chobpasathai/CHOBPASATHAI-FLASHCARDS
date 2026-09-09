@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thai Flashcards App with Pro Lock & Stripe Mock</title>
+    <title>Thai Flashcards App with Login & Pro Lock</title>
 </head>
 <body style="background-color: #12183b; margin: 0; padding: 20px;">
 <div class="tri-lang-dict-widget">
@@ -26,6 +26,21 @@
       box-sizing: border-box;
     }
     .tri-lang-dict-widget * { box-sizing: border-box; }
+
+    /* Login Bar Styles */
+    .tld-auth-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.07);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-family: 'Sarabun', sans-serif;
+      flex-wrap: wrap;
+      gap: 10px;
+      border: 1px solid var(--border);
+    }
 
     .tld-preview-box {
       background: #ffffff;
@@ -322,7 +337,7 @@
     }
     .tld-flashcard-hint { margin-top: 14px; font-size: 12px; color: rgba(0,0,0,0.55); }
 
-    /* Custom Alert Modal */
+    /* Custom Modal / Login Box */
     #tldCustomModalOverlay {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
       z-index: 999999; align-items: center; justify-content: center; font-family: 'Sarabun', sans-serif;
@@ -338,16 +353,26 @@
     }
     #tldModalOkBtn { background: #e7a33e; color: #231604; }
     #tldModalCancelBtn { background: #eeeeee; color: #333333; }
+    
+    .tld-modal-input {
+      width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+    }
   </style>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- แถบบน: ปุ่มจำลองสถานะ Pro / ปลดล็อก -->
-  <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-family: 'Sarabun', sans-serif;">
-    <div>Status: <span id="userStatusBadge" style="background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">FREE USER</span></div>
-    <button type="button" id="upgradeProBtn" style="background: #27ae60; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold;">💎 Upgrade to PRO (Stripe Mock)</button>
+  <!-- แถบบัญชีผู้ใช้และระบบล็อกอิน -->
+  <div class="tld-auth-bar">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span>👤 User: <strong id="currentUserEmail" style="color: var(--accent);">Not logged in (Guest)</strong></span>
+      <span id="userStatusBadge" style="background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">FREE</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button type="button" id="authActionBtn" style="background: #3498db; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold;">🔑 Login</button>
+      <button type="button" id="upgradeProBtn" style="background: #27ae60; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; display: none;">💎 Upgrade to PRO</button>
+    </div>
   </div>
 
   <div class="tld-preview-box">
@@ -440,10 +465,12 @@
   <div class="tld-flashcard-hint">Tap card to flip and view translation</div>
 </div>
 
+<!-- Modal อเนกประสงค์สำหรับ Alert / Login / Paywall -->
 <div id="tldCustomModalOverlay">
   <div id="tldCustomModalBox">
     <div id="tldCustomModalMessage"></div>
-    <div id="tldCustomModalButtons">
+    <div id="tldCustomModalBody"></div>
+    <div id="tldCustomModalButtons" style="margin-top: 15px;">
       <button type="button" id="tldModalCancelBtn">Cancel</button>
       <button type="button" id="tldModalOkBtn">OK</button>
     </div>
@@ -454,14 +481,15 @@
 (function() {
   const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1rIKOMoFmGf3qhpwmexa_74j8LhXzEtQJMGo7eVpmTuE/export?format=csv';
   const SELECTED_KEY = 'MY_EXCLUSIVE_SELECTED_IDS_V1';
-  const PRO_STATUS_KEY = 'MY_APP_IS_PRO_USER_V1';
+  const AUTH_USER_KEY = 'MY_APP_LOGGED_USER_V1';
 
   let dictionaryData = [];
   let selectedIds = loadSelectedIds();
-  let isProUser = localStorage.getItem(PRO_STATUS_KEY) === 'true';
+  
+  // โหลดข้อมูลผู้ใช้ที่ล็อกอินค้างไว้ (ถ้ามี)
+  let currentUser = JSON.parse(localStorage.getItem(AUTH_USER_KEY)) || null; 
+  // ตัวอย่างโครงสร้าง user: { email: "test@gmail.com", isPro: false }
 
-  // กำหนดหมวดหมู่ที่เป็น Pro (ต้องจ่ายเงินถึงจะดูได้)
-  // สามารถเปลี่ยนชื่อหมวดหมู่ตาม Google Sheets ของคุณได้เลย
   const proCategories = ["Business Thai", "Advanced", "Slang"];
 
   let activeAlphabetFilter = '';
@@ -492,7 +520,10 @@
   const resetAlphaBtn = document.getElementById('tldResetAlphaBtn');
   const selectAllFilteredBtn = document.getElementById('tldSelectAllFilteredBtn');
   const categorySelect = document.getElementById('tldCategorySelect');
+  
+  const currentUserEmail = document.getElementById('currentUserEmail');
   const userStatusBadge = document.getElementById('userStatusBadge');
+  const authActionBtn = document.getElementById('authActionBtn');
   const upgradeProBtn = document.getElementById('upgradeProBtn');
 
   const flashcardBtn = document.getElementById('tldFlashcardBtn');
@@ -511,44 +542,102 @@
 
   const customModalOverlay = document.getElementById('tldCustomModalOverlay');
   const customModalMessage = document.getElementById('tldCustomModalMessage');
+  const customModalBody = document.getElementById('tldCustomModalBody');
   const modalOkBtn = document.getElementById('tldModalOkBtn');
   const modalCancelBtn = document.getElementById('tldModalCancelBtn');
 
-  function updateProUI() {
-    if (isProUser) {
-      userStatusBadge.textContent = 'PRO USER 🌟';
-      userStatusBadge.style.background = '#27ae60';
-      upgradeProBtn.textContent = '✨ PRO Unlocked';
-      upgradeProBtn.style.background = '#7f8c8d';
+  function updateAuthUI() {
+    if (currentUser) {
+      currentUserEmail.textContent = currentUser.email;
+      authActionBtn.textContent = '🚪 Logout';
+      authActionBtn.style.background = '#e74c3c';
+      
+      if (currentUser.isPro) {
+        userStatusBadge.textContent = 'PRO USER 🌟';
+        userStatusBadge.style.background = '#27ae60';
+        upgradeProBtn.style.display = 'none';
+      } else {
+        userStatusBadge.textContent = 'FREE';
+        userStatusBadge.style.background = '#e67e22';
+        upgradeProBtn.style.display = 'inline-block';
+      }
     } else {
-      userStatusBadge.textContent = 'FREE USER';
+      currentUserEmail.textContent = 'Not logged in (Guest)';
+      userStatusBadge.textContent = 'FREE';
       userStatusBadge.style.background = '#e74c3c';
-      upgradeProBtn.textContent = '💎 Upgrade to PRO (Stripe Mock)';
-      upgradeProBtn.style.background = '#27ae60';
+      authActionBtn.textContent = '🔑 Login';
+      authActionBtn.style.background = '#3498db';
+      upgradeProBtn.style.display = 'none';
     }
+    updateCategoryDropdown();
+    renderResults(searchInput.value);
   }
-  updateProUI();
+  updateAuthUI();
 
-  // จำลองปุ่มกดจ่ายเงินผ่าน Stripe
-  upgradeProBtn.addEventListener('click', function() {
-    if (isProUser) {
-      customAlert('You are already a Pro user!');
-      return;
+  // จัดการปุ่ม Login / Logout
+  authActionBtn.addEventListener('click', function() {
+    if (currentUser) {
+      // ทำการ Logout
+      currentUser = null;
+      localStorage.removeItem(AUTH_USER_KEY);
+      updateAuthUI();
+      customAlert('Logged out successfully.');
+    } else {
+      // เปิด Modal สำหรับกรอกอีเมลเข้าสู่ระบบ
+      openLoginModal();
     }
-    
-    // จำลองหน้าต่าง Stripe Checkout
-    customModalMessage.textContent = '🔒 [Stripe Checkout Simulation]\n\nDo you want to pay $4.99 to unlock all Pro categories and features?';
+  });
+
+  function openLoginModal() {
+    customModalMessage.textContent = '🔐 Login to your account';
+    customModalBody.innerHTML = `
+      <input type="email" id="loginEmailInput" class="tld-modal-input" placeholder="Enter your email (e.g. user@gmail.com)" autocomplete="off">
+    `;
     modalCancelBtn.style.display = 'inline-block';
     customModalOverlay.style.display = 'flex';
 
     modalOkBtn.onclick = function() {
-      isProUser = true;
-      localStorage.setItem(PRO_STATUS_KEY, 'true');
-      updateProUI();
+      const emailVal = document.getElementById('loginEmailInput').value.trim();
+      if (!emailVal || !emailVal.includes('@')) {
+        alert('Please enter a valid email address!');
+        return;
+      }
+      
+      // จำลองข้อมูลผู้ใช้ (กำหนดให้ถ้านามสกุล @pro.com จะเป็น Pro อัตโนมัติ หรือเซ็ตเป็น Free ก่อนได้)
+      currentUser = {
+        email: emailVal,
+        isPro: emailVal.includes('pro') // ตัวอย่าง: ถ้าพิมพ์อีเมลที่มีคำว่า pro จะได้สถานะ Pro เลย
+      };
+      
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
       closeCustomModal();
-      customAlert('🎉 Payment successful! All Pro categories are now unlocked.');
-      updateCategoryDropdown();
-      renderResults(searchInput.value);
+      updateAuthUI();
+      customAlert(`Welcome back, ${currentUser.email}!`);
+    };
+
+    modalCancelBtn.onclick = function() {
+      closeCustomModal();
+    };
+  }
+
+  // จำลองปุ่มกดซื้อ Pro ผ่าน Stripe
+  upgradeProBtn.addEventListener('click', function() {
+    if (!currentUser) {
+      customAlert('Please login first before upgrading!');
+      return;
+    }
+    
+    customModalMessage.textContent = '🔒 [Stripe Checkout Simulation]\n\nUpgrade to PRO for $4.99 to unlock all categories?';
+    customModalBody.innerHTML = '';
+    modalCancelBtn.style.display = 'inline-block';
+    customModalOverlay.style.display = 'flex';
+
+    modalOkBtn.onclick = function() {
+      currentUser.isPro = true;
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
+      closeCustomModal();
+      updateAuthUI();
+      customAlert('🎉 Payment successful! You are now a PRO user.');
     };
 
     modalCancelBtn.onclick = function() {
@@ -558,12 +647,14 @@
 
   function closeCustomModal() {
     customModalOverlay.style.display = 'none';
+    customModalBody.innerHTML = '';
     modalOkBtn.onclick = null;
     modalCancelBtn.onclick = null;
   }
 
   function customAlert(message) {
     customModalMessage.textContent = message;
+    customModalBody.innerHTML = '';
     modalCancelBtn.style.display = 'none';
     customModalOverlay.style.display = 'flex';
     modalOkBtn.onclick = function() { closeCustomModal(); };
@@ -632,12 +723,14 @@
     const currentVal = categorySelect.value;
     categorySelect.innerHTML = '<option value="">-- All Categories / All --</option>';
     
+    const isPro = currentUser && currentUser.isPro;
+
     Array.from(categoriesSet).sort().forEach(cat => {
       const opt = document.createElement('option');
       opt.value = cat;
       const isProCat = proCategories.some(p => cat.toLowerCase().includes(p.toLowerCase()));
       
-      if (isProCat && !isProUser) {
+      if (isProCat && !isPro) {
         opt.textContent = `🔒 ${cat} (Pro Only)`;
       } else {
         opt.textContent = cat;
@@ -649,25 +742,18 @@
 
   categorySelect.addEventListener('change', function() {
     const selectedCategory = this.value;
-    
-    // ตรวจสอบว่าเป็นหมวดหมู่ Pro หรือไม่ และผู้ใช้ยังไม่ได้อัปเกรด
+    const isPro = currentUser && currentUser.isPro;
     const isProCat = proCategories.some(p => selectedCategory.toLowerCase().includes(p.toLowerCase()));
-    if (isProCat && !isProUser) {
+    
+    if (isProCat && !isPro) {
       this.value = '';
       activeCategoryFilter = '';
       
-      // แสดง Paywall เด้งชวนซื้อ Pro
-      customModalMessage.textContent = `🔒 "${selectedCategory}" is a Pro Category!\n\nPlease upgrade to Pro to unlock advanced vocabulary categories.`;
-      modalCancelBtn.style.display = 'inline-block';
-      customModalOverlay.style.display = 'flex';
-      
-      modalOkBtn.onclick = function() {
-        closeCustomModal();
-        upgradeProBtn.click(); // พาไปหน้าจ่ายเงินจำลอง
-      };
-      modalCancelBtn.onclick = function() {
-        closeCustomModal();
-      };
+      if (!currentUser) {
+        customAlert('🔒 This is a Pro Category!\n\nPlease login and upgrade to Pro to unlock.');
+      } else {
+        upgradeProBtn.click();
+      }
       return;
     }
 
@@ -706,13 +792,14 @@
 
   selectAllFilteredBtn.addEventListener('click', function() {
     const query = searchInput.value.trim().toLowerCase();
+    const isPro = currentUser && currentUser.isPro;
+
     const filtered = dictionaryData.filter(item => {
       if (activeAlphabetFilter && item.group !== activeAlphabetFilter) return false;
       if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) return false;
       
-      // ป้องกันไม่ให้เลือกคำศัพท์ในหมวด Pro หากยังไม่ได้เป็น Pro
       const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
-      if (isProCat && !isProUser) return false;
+      if (isProCat && !isPro) return false;
 
       if (!query) return true;
       return (
@@ -839,9 +926,9 @@
     const card = document.createElement('div');
     card.className = 'tld-card';
     
-    // ตรวจสอบว่าเป็นหมวด Pro และผู้ใช้ยังไม่ได้ซื้อหรือไม่
+    const isPro = currentUser && currentUser.isPro;
     const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
-    const isLocked = isProCat && !isProUser;
+    const isLocked = isProCat && !isPro;
 
     const isChecked = selectedIds.has(item.id) ? 'checked' : '';
     const catBadge = item.category ? `<span style="font-size: 11px; background: rgba(231,163,62,0.2); color: var(--accent); padding: 2px 6px; border-radius: 4px; margin-right: 8px;">[${item.category}]</span>` : '';
@@ -849,15 +936,16 @@
     if (isLocked) {
       card.innerHTML = `
         <div>🔒</div>
-        <div class="card-content-area" style="opacity: 0.5;">
+        <div class="card-content-area" style="opacity: 0.6;">
           <div class="tld-val" style="color: #e74c3c;">
-            ${catBadge} Locked Pro Vocabulary (Upgrade to unlock)
+            ${catBadge} Locked Pro Vocabulary (Click to unlock)
           </div>
         </div>
       `;
       card.style.cursor = 'pointer';
       card.addEventListener('click', () => {
-        upgradeProBtn.click();
+        if (!currentUser) openLoginModal();
+        else upgradeProBtn.click();
       });
       return card;
     }
@@ -928,10 +1016,10 @@
   });
 
   random10Btn.addEventListener('click', function() {
-    // กรองเอาเฉพาะคำที่ผู้ใช้มีสิทธิ์เข้าถึง (ไม่เอาคำในหมวด Pro ที่ยังไม่ล็อก)
+    const isPro = currentUser && currentUser.isPro;
     const availableData = dictionaryData.filter(item => {
       const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
-      return !(isProCat && !isProUser);
+      return !(isProCat && !isPro);
     });
 
     if (availableData.length === 0) {
