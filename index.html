@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tri-Lang Dict Widget with Google Sheets</title>
+    <title>Thai Flashcards App with Pro Lock & Stripe Mock</title>
 </head>
 <body style="background-color: #12183b; margin: 0; padding: 20px;">
 <div class="tri-lang-dict-widget">
@@ -324,17 +324,17 @@
 
     /* Custom Alert Modal */
     #tldCustomModalOverlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
       z-index: 999999; align-items: center; justify-content: center; font-family: 'Sarabun', sans-serif;
     }
     #tldCustomModalBox {
-      background: #ffffff; color: #2c3e50; border-radius: 10px;
-      padding: 22px 24px; max-width: 360px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); text-align: center;
+      background: #ffffff; color: #2c3e50; border-radius: 12px;
+      padding: 24px; max-width: 380px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); text-align: center;
     }
-    #tldCustomModalMessage { font-size: 15px; line-height: 1.5; margin-bottom: 18px; white-space: pre-line; }
+    #tldCustomModalMessage { font-size: 15px; line-height: 1.5; margin-bottom: 20px; white-space: pre-line; }
     #tldCustomModalButtons { display: flex; gap: 10px; justify-content: center; }
     #tldCustomModalButtons button {
-      border: none; border-radius: 8px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif;
+      border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif;
     }
     #tldModalOkBtn { background: #e7a33e; color: #231604; }
     #tldModalCancelBtn { background: #eeeeee; color: #333333; }
@@ -343,6 +343,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- แถบบน: ปุ่มจำลองสถานะ Pro / ปลดล็อก -->
+  <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-family: 'Sarabun', sans-serif;">
+    <div>Status: <span id="userStatusBadge" style="background: #e74c3c; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">FREE USER</span></div>
+    <button type="button" id="upgradeProBtn" style="background: #27ae60; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold;">💎 Upgrade to PRO (Stripe Mock)</button>
+  </div>
 
   <div class="tld-preview-box">
     <div class="tld-preview-header">
@@ -448,9 +454,15 @@
 (function() {
   const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1rIKOMoFmGf3qhpwmexa_74j8LhXzEtQJMGo7eVpmTuE/export?format=csv';
   const SELECTED_KEY = 'MY_EXCLUSIVE_SELECTED_IDS_V1';
+  const PRO_STATUS_KEY = 'MY_APP_IS_PRO_USER_V1';
 
   let dictionaryData = [];
   let selectedIds = loadSelectedIds();
+  let isProUser = localStorage.getItem(PRO_STATUS_KEY) === 'true';
+
+  // กำหนดหมวดหมู่ที่เป็น Pro (ต้องจ่ายเงินถึงจะดูได้)
+  // สามารถเปลี่ยนชื่อหมวดหมู่ตาม Google Sheets ของคุณได้เลย
+  const proCategories = ["Business Thai", "Advanced", "Slang"];
 
   let activeAlphabetFilter = '';
   let activeCategoryFilter = '';
@@ -480,6 +492,8 @@
   const resetAlphaBtn = document.getElementById('tldResetAlphaBtn');
   const selectAllFilteredBtn = document.getElementById('tldSelectAllFilteredBtn');
   const categorySelect = document.getElementById('tldCategorySelect');
+  const userStatusBadge = document.getElementById('userStatusBadge');
+  const upgradeProBtn = document.getElementById('upgradeProBtn');
 
   const flashcardBtn = document.getElementById('tldFlashcardBtn');
   const random10Btn = document.getElementById('tldRandom10Btn');
@@ -499,6 +513,48 @@
   const customModalMessage = document.getElementById('tldCustomModalMessage');
   const modalOkBtn = document.getElementById('tldModalOkBtn');
   const modalCancelBtn = document.getElementById('tldModalCancelBtn');
+
+  function updateProUI() {
+    if (isProUser) {
+      userStatusBadge.textContent = 'PRO USER 🌟';
+      userStatusBadge.style.background = '#27ae60';
+      upgradeProBtn.textContent = '✨ PRO Unlocked';
+      upgradeProBtn.style.background = '#7f8c8d';
+    } else {
+      userStatusBadge.textContent = 'FREE USER';
+      userStatusBadge.style.background = '#e74c3c';
+      upgradeProBtn.textContent = '💎 Upgrade to PRO (Stripe Mock)';
+      upgradeProBtn.style.background = '#27ae60';
+    }
+  }
+  updateProUI();
+
+  // จำลองปุ่มกดจ่ายเงินผ่าน Stripe
+  upgradeProBtn.addEventListener('click', function() {
+    if (isProUser) {
+      customAlert('You are already a Pro user!');
+      return;
+    }
+    
+    // จำลองหน้าต่าง Stripe Checkout
+    customModalMessage.textContent = '🔒 [Stripe Checkout Simulation]\n\nDo you want to pay $4.99 to unlock all Pro categories and features?';
+    modalCancelBtn.style.display = 'inline-block';
+    customModalOverlay.style.display = 'flex';
+
+    modalOkBtn.onclick = function() {
+      isProUser = true;
+      localStorage.setItem(PRO_STATUS_KEY, 'true');
+      updateProUI();
+      closeCustomModal();
+      customAlert('🎉 Payment successful! All Pro categories are now unlocked.');
+      updateCategoryDropdown();
+      renderResults(searchInput.value);
+    };
+
+    modalCancelBtn.onclick = function() {
+      closeCustomModal();
+    };
+  });
 
   function closeCustomModal() {
     customModalOverlay.style.display = 'none';
@@ -575,17 +631,47 @@
 
     const currentVal = categorySelect.value;
     categorySelect.innerHTML = '<option value="">-- All Categories / All --</option>';
+    
     Array.from(categoriesSet).sort().forEach(cat => {
       const opt = document.createElement('option');
       opt.value = cat;
-      opt.textContent = cat;
+      const isProCat = proCategories.some(p => cat.toLowerCase().includes(p.toLowerCase()));
+      
+      if (isProCat && !isProUser) {
+        opt.textContent = `🔒 ${cat} (Pro Only)`;
+      } else {
+        opt.textContent = cat;
+      }
       categorySelect.appendChild(opt);
     });
     categorySelect.value = categoriesSet.has(currentVal) ? currentVal : '';
   }
 
   categorySelect.addEventListener('change', function() {
-    activeCategoryFilter = this.value;
+    const selectedCategory = this.value;
+    
+    // ตรวจสอบว่าเป็นหมวดหมู่ Pro หรือไม่ และผู้ใช้ยังไม่ได้อัปเกรด
+    const isProCat = proCategories.some(p => selectedCategory.toLowerCase().includes(p.toLowerCase()));
+    if (isProCat && !isProUser) {
+      this.value = '';
+      activeCategoryFilter = '';
+      
+      // แสดง Paywall เด้งชวนซื้อ Pro
+      customModalMessage.textContent = `🔒 "${selectedCategory}" is a Pro Category!\n\nPlease upgrade to Pro to unlock advanced vocabulary categories.`;
+      modalCancelBtn.style.display = 'inline-block';
+      customModalOverlay.style.display = 'flex';
+      
+      modalOkBtn.onclick = function() {
+        closeCustomModal();
+        upgradeProBtn.click(); // พาไปหน้าจ่ายเงินจำลอง
+      };
+      modalCancelBtn.onclick = function() {
+        closeCustomModal();
+      };
+      return;
+    }
+
+    activeCategoryFilter = selectedCategory;
     renderResults(searchInput.value);
   });
 
@@ -621,12 +707,13 @@
   selectAllFilteredBtn.addEventListener('click', function() {
     const query = searchInput.value.trim().toLowerCase();
     const filtered = dictionaryData.filter(item => {
-      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) {
-        return false;
-      }
-      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) {
-        return false;
-      }
+      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) return false;
+      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) return false;
+      
+      // ป้องกันไม่ให้เลือกคำศัพท์ในหมวด Pro หากยังไม่ได้เป็น Pro
+      const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
+      if (isProCat && !isProUser) return false;
+
       if (!query) return true;
       return (
         (item.th || '').toLowerCase().includes(query) ||
@@ -699,12 +786,9 @@
   function renderResults(keyword = '') {
     const query = keyword.trim().toLowerCase();
     const filtered = dictionaryData.filter(item => {
-      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) {
-        return false;
-      }
-      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) {
-        return false;
-      }
+      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) return false;
+      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) return false;
+      
       if (!query) return true;
       return (
         (item.th || '').toLowerCase().includes(query) ||
@@ -754,8 +838,29 @@
   function createCard(item) {
     const card = document.createElement('div');
     card.className = 'tld-card';
+    
+    // ตรวจสอบว่าเป็นหมวด Pro และผู้ใช้ยังไม่ได้ซื้อหรือไม่
+    const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
+    const isLocked = isProCat && !isProUser;
+
     const isChecked = selectedIds.has(item.id) ? 'checked' : '';
     const catBadge = item.category ? `<span style="font-size: 11px; background: rgba(231,163,62,0.2); color: var(--accent); padding: 2px 6px; border-radius: 4px; margin-right: 8px;">[${item.category}]</span>` : '';
+
+    if (isLocked) {
+      card.innerHTML = `
+        <div>🔒</div>
+        <div class="card-content-area" style="opacity: 0.5;">
+          <div class="tld-val" style="color: #e74c3c;">
+            ${catBadge} Locked Pro Vocabulary (Upgrade to unlock)
+          </div>
+        </div>
+      `;
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        upgradeProBtn.click();
+      });
+      return card;
+    }
 
     card.innerHTML = `
       <div>
@@ -823,11 +928,17 @@
   });
 
   random10Btn.addEventListener('click', function() {
-    if (dictionaryData.length === 0) {
-      customAlert('No vocabulary data available in storage');
+    // กรองเอาเฉพาะคำที่ผู้ใช้มีสิทธิ์เข้าถึง (ไม่เอาคำในหมวด Pro ที่ยังไม่ล็อก)
+    const availableData = dictionaryData.filter(item => {
+      const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
+      return !(isProCat && !isProUser);
+    });
+
+    if (availableData.length === 0) {
+      customAlert('No vocabulary data available');
       return;
     }
-    const shuffled = [...dictionaryData].sort(() => 0.5 - Math.random());
+    const shuffled = [...availableData].sort(() => 0.5 - Math.random());
     const random10 = shuffled.slice(0, 10);
     openFlashcards(random10);
   });
