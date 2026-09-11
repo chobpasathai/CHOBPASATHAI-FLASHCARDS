@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tri-Lang Dict Widget with Google Sheets</title>
 </head>
-<body style="background-color: #12183b; margin: 0; padding: 20px;">
+<body style="background-color: #faf0bf; margin: 0; padding: 20px;">
 <div class="tri-lang-dict-widget">
   <style>
     .tri-lang-dict-widget {
@@ -366,6 +366,10 @@
     </div>
     
     <div class="tld-export-bar">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="color: #2e3d96; font-weight: 700; font-family: 'Sarabun', sans-serif; font-size: 15px;">CHOBPASATHAI - ชอบภาษาไทย</span>
+        <a href="https://www.chobpasathai.com/more-all-in-one-thai-materials" target="_blank" style="background: #e7a33e; color: #231604; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-family: 'Sarabun', sans-serif; font-size: 13px;">More "All-in-one Thai materials"</a>
+      </div>
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
         <div>Selected for Flashcards: <strong id="selectedCount" style="color: var(--accent);">0</strong> items</div>
       </div>
@@ -445,6 +449,20 @@
     </div>
   </div>
 </div>
+
+<!-- Welcome Pop-up Overlay -->
+<div id="tldWelcomePopup" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+  <div style="display: flex; flex-direction: column; align-items: center; background: transparent; box-shadow: none; border: none; padding: 0;">
+    <img src="https://drive.google.com/uc?export=view&id=1Pav9xG6iv4470NEEIZzh3dLMvzcs36hT" alt="Welcome Popup" style="max-width: 90vw; max-height: 70vh; display: block; border-radius: 8px; object-fit: contain;">
+    <button type="button" id="tldWelcomeStartBtn" style="margin-top: 15px; background: #e7a33e; color: #231604; border: none; border-radius: 8px; padding: 12px 32px; font-size: 16px; font-weight: bold; cursor: pointer; font-family: 'Sarabun', sans-serif;">START</button>
+  </div>
+</div>
+
+<script>
+  document.getElementById('tldWelcomeStartBtn').addEventListener('click', function() {
+    document.getElementById('tldWelcomePopup').style.display = 'none';
+  });
+</script>
 
 <script>
 (function() {
@@ -845,12 +863,11 @@
   });
 
   function handleRandomItems(count) {
-    const selectedItems = dictionaryData.filter(item => selectedIds.has(item.id));
-    if (selectedItems.length === 0) {
-      customAlert('Please check at least 1 vocabulary item before opening Random Flashcards!');
+    if (dictionaryData.length === 0) {
+      customAlert('No vocabulary data available in storage');
       return;
     }
-    const shuffled = [...selectedItems].sort(() => 0.5 - Math.random());
+    const shuffled = [...dictionaryData].sort(() => 0.5 - Math.random());
     const randomItems = shuffled.slice(0, Math.min(count, shuffled.length));
     openFlashcards(randomItems);
   }
