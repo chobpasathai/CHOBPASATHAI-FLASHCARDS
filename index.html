@@ -391,7 +391,7 @@
       <div class="tld-alphabet-bar-header">
         <span>Filter by Thai Consonants:</span>
         <div style="display: flex; gap: 6px;">
-          <button type="button" id="tldSelectAllFilteredBtn" class="tld-alpha-btn" style="padding: 2px 8px; font-size: 11px; width: auto; background: #e7a33e; color: #231604; font-weight: bold;">Select All (Filtered)</button>
+          <button type="button" id="tldSelectAllFilteredBtn" class="tld-alpha-btn" style="padding: 2px 8px; font-size: 11px; width: auto; background: #e7a33e; color: #231604; font-weight: bold; opacity: 0.5; cursor: not-allowed;" disabled>Select All (Filtered)</button>
           <button type="button" id="tldResetAlphaBtn" class="tld-alpha-btn" style="padding: 2px 8px; font-size: 11px; width: auto;">Show All</button>
         </div>
       </div>
@@ -590,6 +590,7 @@
 
   categorySelect.addEventListener('change', function() {
     activeCategoryFilter = this.value;
+    updateSelectAllButtonState();
     renderResults(searchInput.value);
   });
 
@@ -608,6 +609,7 @@
           activeAlphabetFilter = char;
         }
         renderAlphabetButtons();
+        updateSelectAllButtonState();
         renderResults(searchInput.value);
       });
       alphabetGridContainer.appendChild(btn);
@@ -619,10 +621,26 @@
     activeCategoryFilter = '';
     categorySelect.value = '';
     renderAlphabetButtons();
+    updateSelectAllButtonState();
     renderResults(searchInput.value);
   });
 
+  function updateSelectAllButtonState() {
+    if (activeAlphabetFilter !== '' || activeCategoryFilter !== '') {
+      selectAllFilteredBtn.removeAttribute('disabled');
+      selectAllFilteredBtn.style.opacity = '1';
+      selectAllFilteredBtn.style.cursor = 'pointer';
+    } else {
+      selectAllFilteredBtn.setAttribute('disabled', 'true');
+      selectAllFilteredBtn.style.opacity = '0.5';
+      selectAllFilteredBtn.style.cursor = 'not-allowed';
+    }
+  }
+
   selectAllFilteredBtn.addEventListener('click', function() {
+    if (activeAlphabetFilter === '' && activeCategoryFilter === '') {
+      return;
+    }
     const query = searchInput.value.trim().toLowerCase();
     const filtered = dictionaryData.filter(item => {
       if (activeAlphabetFilter && item.group !== activeAlphabetFilter) {
@@ -640,11 +658,6 @@
         (item.category && item.category.toLowerCase().includes(query))
       );
     });
-
-    if (filtered.length === 0) {
-      customAlert('No vocabulary items found in the current filter to select.');
-      return;
-    }
 
     filtered.forEach(item => selectedIds.add(item.id));
     saveSelectedIds();
@@ -834,7 +847,7 @@
   function handleRandomItems(count) {
     const selectedItems = dictionaryData.filter(item => selectedIds.has(item.id));
     if (selectedItems.length === 0) {
-      customAlert('Please check at least 1 vocabulary item before using Random mode!');
+      customAlert('Please check at least 1 vocabulary item before opening Random Flashcards!');
       return;
     }
     const shuffled = [...selectedItems].sort(() => 0.5 - Math.random());
