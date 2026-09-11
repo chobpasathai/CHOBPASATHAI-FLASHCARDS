@@ -3,19 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thai Flashcards App with Full Course Access</title>
+    <title>Tri-Lang Dict Widget with Google Sheets</title>
 </head>
-<body style="background-color: #faf0bf; margin: 0; padding: 20px;">
-
-<!-- Welcome Popup Overlay -->
-<div id="tldWelcomePopup" style="display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999999; align-items: center; justify-content: center; font-family: 'Sarabun', sans-serif;">
-  <div style="background: transparent; border-radius: 16px; padding: 0; max-width: 400px; width: 90%; text-align: center; position: relative;">
-    <button type="button" id="tldWelcomeCloseBtn" style="position: absolute; top: -15px; right: -15px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 14px; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">✕</button>
-    <img src="https://lh3.googleusercontent.com/d/1Pav9xG6iv4470NEEIZzh3dLMvzcs36hT=s1000" alt="Welcome" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
-    <button type="button" id="tldWelcomeOkBtn" style="background: #e7a33e; color: #231604; border: none; border-radius: 8px; padding: 10px 24px; font-size: 15px; font-weight: bold; cursor: pointer; font-family: 'Sarabun', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">START</button>
-  </div>
-</div>
-
+<body style="background-color: #12183b; margin: 0; padding: 20px;">
 <div class="tri-lang-dict-widget">
   <style>
     .tri-lang-dict-widget {
@@ -36,21 +26,6 @@
       box-sizing: border-box;
     }
     .tri-lang-dict-widget * { box-sizing: border-box; }
-
-    /* Auth Bar / Course Access Bar */
-    .tld-auth-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255,255,255,0.07);
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-family: 'Sarabun', sans-serif;
-      flex-wrap: wrap;
-      gap: 10px;
-      border: 1px solid var(--border);
-    }
 
     .tld-preview-box {
       background: #ffffff;
@@ -347,39 +322,27 @@
     }
     .tld-flashcard-hint { margin-top: 14px; font-size: 12px; color: rgba(0,0,0,0.55); }
 
-    /* Custom Modal */
+    /* Custom Alert Modal */
     #tldCustomModalOverlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       z-index: 999999; align-items: center; justify-content: center; font-family: 'Sarabun', sans-serif;
     }
     #tldCustomModalBox {
-      background: #ffffff; color: #2c3e50; border-radius: 12px;
-      padding: 24px; max-width: 380px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); text-align: center;
+      background: #ffffff; color: #2c3e50; border-radius: 10px;
+      padding: 22px 24px; max-width: 360px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.35); text-align: center;
     }
-    #tldCustomModalMessage { font-size: 15px; line-height: 1.5; margin-bottom: 20px; white-space: pre-line; }
+    #tldCustomModalMessage { font-size: 15px; line-height: 1.5; margin-bottom: 18px; white-space: pre-line; }
     #tldCustomModalButtons { display: flex; gap: 10px; justify-content: center; }
     #tldCustomModalButtons button {
-      border: none; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif;
+      border: none; border-radius: 8px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Sarabun', sans-serif;
     }
     #tldModalOkBtn { background: #e7a33e; color: #231604; }
-    #tldModalCancelBtn { background: #eeeeee; color: #333333; display: none; }
+    #tldModalCancelBtn { background: #eeeeee; color: #333333; }
   </style>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
-  <!-- แถบลิงก์ไปซื้อคอร์ส -->
-  <div class="tld-auth-bar">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <span style="color: #2e3d96; font-weight: bold;">CHOBPASATHAI - ชอบภาษาไทย</span>
-    </div>
-    <div style="display: flex; gap: 8px;">
-      <a href="https://www.chobpasathai.com/more-all-in-one-thai-materials" target="_blank" style="text-decoration: none;">
-        <button type="button" style="background: #27ae60; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold;">More "All-in-one Thai materials"</button>
-      </a>
-    </div>
-  </div>
 
   <div class="tld-preview-box">
     <div class="tld-preview-header">
@@ -414,7 +377,9 @@
               <input type="checkbox" id="hideReadCheckbox"> Hide Pronunciation
             </label>
             <button class="tld-btn" id="tldFlashcardBtn" style="background: #16a085; color: #fff; padding: 8px 12px; font-size: 13px;">🗂️ Flashcards</button>
-            <button class="tld-btn" id="tldRandom10Btn" style="background: #e67e22; color: #fff; padding: 8px 12px; font-size: 13px;">🎲 Random 10 Items</button>
+            <button class="tld-btn" id="tldRandom10Btn" style="background: #e67e22; color: #fff; padding: 8px 12px; font-size: 13px;">🎲 Random 10</button>
+            <button class="tld-btn" id="tldRandom20Btn" style="background: #d35400; color: #fff; padding: 8px 12px; font-size: 13px;">🎲 Random 20</button>
+            <button class="tld-btn" id="tldRandom30Btn" style="background: #c0392b; color: #fff; padding: 8px 12px; font-size: 13px;">🎲 Random 30</button>
           </div>
         </div>
       </div>
@@ -471,11 +436,10 @@
   <div class="tld-flashcard-hint">Tap card to flip and view translation</div>
 </div>
 
-<!-- Modal สำหรับแจ้งเตือน -->
 <div id="tldCustomModalOverlay">
   <div id="tldCustomModalBox">
     <div id="tldCustomModalMessage"></div>
-    <div id="tldCustomModalButtons" style="margin-top: 15px;">
+    <div id="tldCustomModalButtons">
       <button type="button" id="tldModalCancelBtn">Cancel</button>
       <button type="button" id="tldModalOkBtn">OK</button>
     </div>
@@ -484,31 +448,11 @@
 
 <script>
 (function() {
-  // ควบคุมการปิด Welcome Popup
-  const welcomePopup = document.getElementById('tldWelcomePopup');
-  const welcomeCloseBtn = document.getElementById('tldWelcomeCloseBtn');
-  const welcomeOkBtn = document.getElementById('tldWelcomeOkBtn');
-
-  function closeWelcome() {
-    if (welcomePopup) welcomePopup.style.display = 'none';
-  }
-
-  if (welcomeCloseBtn) welcomeCloseBtn.onclick = closeWelcome;
-  if (welcomeOkBtn) welcomeOkBtn.onclick = closeWelcome;
-  if (welcomePopup) {
-    welcomePopup.onclick = function(e) {
-      if (e.target === welcomePopup) closeWelcome();
-    };
-  }
-
   const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1rIKOMoFmGf3qhpwmexa_74j8LhXzEtQJMGo7eVpmTuE/export?format=csv';
   const SELECTED_KEY = 'MY_EXCLUSIVE_SELECTED_IDS_V1';
 
   let dictionaryData = [];
   let selectedIds = loadSelectedIds();
-  
-  const isPro = false; 
-  const proCategories = ["Business Thai", "Advanced", "Slang"];
 
   let activeAlphabetFilter = '';
   let activeCategoryFilter = '';
@@ -541,6 +485,8 @@
 
   const flashcardBtn = document.getElementById('tldFlashcardBtn');
   const random10Btn = document.getElementById('tldRandom10Btn');
+  const random20Btn = document.getElementById('tldRandom20Btn');
+  const random30Btn = document.getElementById('tldRandom30Btn');
   const flashcardOverlay = document.getElementById('tldFlashcardOverlay');
   const flashcardEl = document.getElementById('tldFlashcardEl');
   const flashcardCounter = document.getElementById('tldFlashcardCounter');
@@ -558,11 +504,17 @@
   const modalOkBtn = document.getElementById('tldModalOkBtn');
   const modalCancelBtn = document.getElementById('tldModalCancelBtn');
 
+  function closeCustomModal() {
+    customModalOverlay.style.display = 'none';
+    modalOkBtn.onclick = null;
+    modalCancelBtn.onclick = null;
+  }
+
   function customAlert(message) {
     customModalMessage.textContent = message;
     modalCancelBtn.style.display = 'none';
     customModalOverlay.style.display = 'flex';
-    modalOkBtn.onclick = function() { customModalOverlay.style.display = 'none'; };
+    modalOkBtn.onclick = function() { closeCustomModal(); };
   }
 
   const thaiConsonants = [
@@ -627,34 +579,17 @@
 
     const currentVal = categorySelect.value;
     categorySelect.innerHTML = '<option value="">-- All Categories / All --</option>';
-
     Array.from(categoriesSet).sort().forEach(cat => {
       const opt = document.createElement('option');
       opt.value = cat;
-      const isProCat = proCategories.some(p => cat.toLowerCase().includes(p.toLowerCase()));
-      
-      if (isProCat && !isPro) {
-        opt.textContent = `🔒 ${cat} (Pro Only)`;
-      } else {
-        opt.textContent = cat;
-      }
+      opt.textContent = cat;
       categorySelect.appendChild(opt);
     });
     categorySelect.value = categoriesSet.has(currentVal) ? currentVal : '';
   }
 
   categorySelect.addEventListener('change', function() {
-    const selectedCategory = this.value;
-    const isProCat = proCategories.some(p => selectedCategory.toLowerCase().includes(p.toLowerCase()));
-    
-    if (isProCat && !isPro) {
-      this.value = '';
-      activeCategoryFilter = '';
-      window.open('https://www.chobpasathai.com/more-all-in-one-thai-materials', '_blank');
-      return;
-    }
-
-    activeCategoryFilter = selectedCategory;
+    activeCategoryFilter = this.value;
     renderResults(searchInput.value);
   });
 
@@ -689,14 +624,13 @@
 
   selectAllFilteredBtn.addEventListener('click', function() {
     const query = searchInput.value.trim().toLowerCase();
-
     const filtered = dictionaryData.filter(item => {
-      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) return false;
-      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) return false;
-      
-      const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
-      if (isProCat && !isPro) return false;
-
+      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) {
+        return false;
+      }
+      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) {
+        return false;
+      }
       if (!query) return true;
       return (
         (item.th || '').toLowerCase().includes(query) ||
@@ -706,6 +640,11 @@
         (item.category && item.category.toLowerCase().includes(query))
       );
     });
+
+    if (filtered.length === 0) {
+      customAlert('No vocabulary items found in the current filter to select.');
+      return;
+    }
 
     filtered.forEach(item => selectedIds.add(item.id));
     saveSelectedIds();
@@ -769,9 +708,12 @@
   function renderResults(keyword = '') {
     const query = keyword.trim().toLowerCase();
     const filtered = dictionaryData.filter(item => {
-      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) return false;
-      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) return false;
-      
+      if (activeAlphabetFilter && item.group !== activeAlphabetFilter) {
+        return false;
+      }
+      if (activeCategoryFilter && (item.category || '').trim() !== activeCategoryFilter) {
+        return false;
+      }
       if (!query) return true;
       return (
         (item.th || '').toLowerCase().includes(query) ||
@@ -821,28 +763,8 @@
   function createCard(item) {
     const card = document.createElement('div');
     card.className = 'tld-card';
-    
-    const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
-    const isLocked = isProCat && !isPro;
-
     const isChecked = selectedIds.has(item.id) ? 'checked' : '';
     const catBadge = item.category ? `<span style="font-size: 11px; background: rgba(231,163,62,0.2); color: var(--accent); padding: 2px 6px; border-radius: 4px; margin-right: 8px;">[${item.category}]</span>` : '';
-
-    if (isLocked) {
-      card.innerHTML = `
-        <div>🔒</div>
-        <div class="card-content-area" style="opacity: 0.6;">
-          <div class="tld-val" style="color: #e74c3c;">
-            ${catBadge} Locked Pro Vocabulary (Click to unlock full course)
-          </div>
-        </div>
-      `;
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', () => {
-        window.open('https://www.chobpasathai.com/more-all-in-one-thai-materials', '_blank');
-      });
-      return card;
-    }
 
     card.innerHTML = `
       <div>
@@ -909,20 +831,20 @@
     openFlashcards(selectedItems);
   });
 
-  random10Btn.addEventListener('click', function() {
-    const availableData = dictionaryData.filter(item => {
-      const isProCat = proCategories.some(p => (item.category || '').toLowerCase().includes(p.toLowerCase()));
-      return !(isProCat && !isPro);
-    });
-
-    if (availableData.length === 0) {
-      customAlert('No vocabulary data available');
+  function handleRandomItems(count) {
+    const selectedItems = dictionaryData.filter(item => selectedIds.has(item.id));
+    if (selectedItems.length === 0) {
+      customAlert('Please check at least 1 vocabulary item before using Random mode!');
       return;
     }
-    const shuffled = [...availableData].sort(() => 0.5 - Math.random());
-    const random10 = shuffled.slice(0, 10);
-    openFlashcards(random10);
-  });
+    const shuffled = [...selectedItems].sort(() => 0.5 - Math.random());
+    const randomItems = shuffled.slice(0, Math.min(count, shuffled.length));
+    openFlashcards(randomItems);
+  }
+
+  random10Btn.addEventListener('click', () => handleRandomItems(10));
+  random20Btn.addEventListener('click', () => handleRandomItems(20));
+  random30Btn.addEventListener('click', () => handleRandomItems(30));
 
   flashcardEl.addEventListener('click', function() {
     flashcardEl.classList.toggle('tld-flipped');
